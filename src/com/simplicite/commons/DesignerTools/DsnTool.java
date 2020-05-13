@@ -43,4 +43,26 @@ public class DsnTool implements java.io.Serializable {
 		String encoding = Globals.BINARY;
 		return Tool.readUrlAsByteArray(url, user, password, postData.toString(), headers, encoding);
 	}
+	
+	public static void setRespList(String userId, List<String> newGroupsList, String userModule){
+		List<String> oldGroupsList = getRespList(userId);
+		
+		// remove old unused groups
+		for(String oldGroup : oldGroupsList)
+			if(!newGroupsList.contains(oldGroup))
+				Grant.removeResponsibility(userId, oldGroup);
+				
+		// add new missing groups
+		for(String newGroup : newGroupsList)
+			if(!oldGroupsList.contains(newGroup))
+				Grant.addResponsibility(userId, newGroup, Tool.getCurrentDate(), null, true, userModule);
+	}
+	
+	public static List<String> getRespList(String userId){
+		if(Tool.isEmpty(userId))
+			return null;
+		Grant g = Grant.getSystemAdmin();
+		String[] groups = g.queryFirstColumn("select distinct g.grp_name from m_resp r inner join m_group as g on r.rsp_group_id=g.row_id where r.rsp_login_id="+userId);
+		return groups!=null && groups.length>0 ? Arrays.asList(groups) : new ArrayList<String>();
+	}
 }
