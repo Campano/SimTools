@@ -1,0 +1,10 @@
+{
+    "date": "Wed May 13 13:02:44 CEST 2020",
+    "name": "DesignerTools",
+    "format": "xml",
+    "description": "",
+    "files": ["DesignerTools.xml"],
+    "repository": {},
+    "version": "1",
+    "dependencies": {"Simplicite": "4.0"}
+}

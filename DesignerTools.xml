@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simplicite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.simplicite.fr/base" xsi:schemaLocation="http://www.simplicite.fr/base https://www.simplicite.io/resources/schemas/base.xsd">
+<object>
+	<name>Module</name>
+	<action>upsert</action>
+	<data>
+		<mdl_name>DesignerTools</mdl_name>
+		<mdl_version>1</mdl_version>
+		<mdl_prefix>dsn</mdl_prefix>
+		<mdl_url/>
+		<mdl_lastupd>2020-05-13 13:02:44</mdl_lastupd>
+		<mdl_comment/>
+	</data>
+</object>
+<object>
+	<name>Adapter</name>
+	<action>upsert</action>
+	<data>
+		<adp_name>QuickParamAdapter</adp_name>
+		<adp_atomic>1</adp_atomic>
+		<adp_type>JAVA</adp_type>
+		<adp_script/>
+		<adp_class/>
+		<adp_script_id>src/com/simplicite/adapters/DesignerTools/QuickParamAdapter.java</adp_script_id>
+		<row_module_id.mdl_name>DesignerTools</row_module_id.mdl_name>
+	</data>
+</object>
+<object>
+	<name>Script</name>
+	<action>upsert</action>
+	<data>
+		<scr_code>DsnTool</scr_code>
+		<scr_file>src/com/simplicite/commons/DesignerTools/DsnTool.java</scr_file>
+		<scr_type>JSR</scr_type>
+		<row_module_id.mdl_name>DesignerTools</row_module_id.mdl_name>
+	</data>
+</object>
+</simplicite>
