@@ -1,10 +1,10 @@
 {
-    "date": "Wed May 13 13:02:44 CEST 2020",
+    "date": "Wed May 13 13:19:06 CEST 2020",
     "name": "DesignerTools",
     "format": "xml",
     "description": "",
     "files": ["DesignerTools.xml"],
-    "repository": {},
+    "repository": {"origin": {"uri": "https://github.com/Campano/module-designertools.git"}},
     "version": "1",
     "dependencies": {"Simplicite": "4.0"}
 }
