@@ -79,14 +79,21 @@ var sim = (function(globals) {
         });
     }
 
-    function disp(content){
-        if(GLOBALS.display_container == undefined){
-            console.log(JSON.stringify(content, null, 4));
+    function disp(content){ //false, true, 'debug', 'container-id'
+        if(GLOBALS.log === false){
+            return;
         }
-        else{
+        if(GLOBALS.log === true || GLOBALS.log === undefined){
+            console.log(JSON.stringify(content, null, 4));
+            return;
+        }
+        else if(GLOBALS.log === 'debug'){
+            console.debug(JSON.stringify(content, null, 4));
+        }
+        else if(document.getElementById(GLOBALS.log) !== null){
             var p = document.createElement("p");
             p.textContent = content;
-            document.getElementById(GLOBALS.displayContainerId)
+            document.getElementById(GLOBALS.log)
                 .appendChild(p)
                 .appendChild(document.createElement("hr"));
         }
@@ -95,7 +102,8 @@ var sim = (function(globals) {
     return {
         init : init,
         connect : connect,
-        getApp: getApp
+        getApp: getApp,
+        disp: disp
     };
 })();
 
