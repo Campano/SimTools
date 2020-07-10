@@ -49,7 +49,7 @@ var sim = (function(globals) {
                         APP = null;
                         //retry if case failed for expired token
                         if(token&&userCreds)
-                            connect(params).catch(reject).then(resolve);
+                            connect(params)().catch(reject).then(resolve);
                         else
                             reject();
                         token&&userCreds ? connect(smp, userCreds, cb) : cb(false); 
