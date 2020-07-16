@@ -5,10 +5,14 @@ var sim = (function(globals) {
     var TOKEN_STORAGE_KEY = 'sim-token';
     var APP = null;
 
-    function init(g){
+    function init(g, user){
+        if(GLOBALS !== null){
+            return Promise.reject('Already initialized.');
+        }
         GLOBALS = g;
         disp('init');
-        return loadJS(GLOBALS.instanceRoot+JS_BUNDLE);
+        return loadJS(GLOBALS.instanceRoot+JS_BUNDLE)
+        .then(user!==undefined ? connect(user) : Promise.resolve())
     }
 
     // Connect using tokens if available
