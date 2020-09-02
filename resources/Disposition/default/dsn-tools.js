@@ -109,9 +109,7 @@ var sim = (function(globals) {
     }
 
     function getApp(){
-        return new Promise(function(resolve, reject){
-            resolve(APP);
-        });
+	return APP;
     }
 
     function loadJS(url){
