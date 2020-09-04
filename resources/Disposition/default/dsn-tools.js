@@ -1,211 +1,97 @@
-var sim = (function(globals) {
+var sim = (function() { 
     'use strict';
-    var JS_BUNDLE = '/scripts/ajax/ajax-bundle.js';
-    var GLOBALS = null;
-    var TOKEN_STORAGE_KEY = 'sim-token';
-    var APP = null;
+    var SIM_PARAMS=null, APP=null, JS_BUNDLE = '/scripts/ajax/ajax-bundle.js', TOKEN_STORAGE_KEY = 'sim-token';
+    var saveToken = t => window.localStorage.setItem(TOKEN_STORAGE_KEY, t);
+    var readToken = () => window.localStorage.getItem(TOKEN_STORAGE_KEY)||false;
+    var deleteToken = () => window.localStorage.removeItem(TOKEN_STORAGE_KEY);
 
-    function init(g, user){
-        if(GLOBALS !== null){
-            return Promise.reject('Already initialized.');
-        }
-        GLOBALS = g;
-        disp('init');
-        return loadJS(GLOBALS.instanceRoot+JS_BUNDLE)
-        .then(user!==undefined ? connect(user) : Promise.resolve())
-    }
-
-    // Connect using tokens if available
-    function connect(params){
-        return () => new Promise(function(resolve, reject){
-            var userCreds = params.hasOwnProperty('login') && params.hasOwnProperty('password') ? {login: params.login, password:params.password} : false;
-            var token = params.hasOwnProperty('tryToken') &&  params.tryToken===true ? window.localStorage.getItem(TOKEN_STORAGE_KEY)||false : false;
-            if(GLOBALS === null || Simplicite === undefined){
-                disp('SIM not initialized');
-                reject(); 
-            }
-            else if(APP!==null){
-                disp('Already connected'); 
-                resolve(APP);
-            }
-            else if(token===false && userCreds===false){
-                disp('Impossible to connect without connection params'); 
-                reject();
-            }
-            else if(token!==false){
-                disp('Start connection for token '+TOKEN_STORAGE_KEY);
-                APP = new Simplicite.Ajax(
-                    GLOBALS.instanceRoot,
-                    GLOBALS.endpoint
-                );
-                APP.login(
-                    connectSuccess(resolve),
-                    () => {
-                        disp('Failed login for token. Removing token.');
-                        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-                        APP = null;
-                        //retry if case failed for expired token
-                        if(userCreds){
-                            disp('UserCreds present, trying userCred Connection.');
-                            connect(params)().catch(reject).then(resolve);
-                        }
-                        else
-                            reject();
-                    },
-                    token,
-                    GLOBALS.params
-                );
-            }
-            else{
-                disp('Start connection for user '+userCreds.login);
-                APP = new Simplicite.Ajax(
-                    GLOBALS.instanceRoot,
-                    GLOBALS.endpoint,
-                    userCreds.login,
-                    userCreds.password
-                );
-                APP.login(
-                    connectSuccess(resolve),
-                    () => {
-                        disp('Failed login');
-                        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-                        APP = null;
-                        reject();
-                    },
-                    false,
-                    GLOBALS.params
-                );
-            }
-        });
-    }
-
-    function connectSuccess(callback){
-        return (s) => {
-            disp('Successful connection, saving token...');
-            window.localStorage.setItem(TOKEN_STORAGE_KEY, s.authtoken);
-            APP.getGrant(g => {
-                disp('Got grant data for user '+g.login+', responsibilities: '+JSON.stringify(APP.grant.responsibilities));
-                callback(APP);
-            });
+    var init = (init_params,connect_params=false) => {
+        dispOk('Initialise Simplicité helper');
+        if(SIM_PARAMS !== null) return Promise.reject(dispKo('Already initialized.')); 
+        if(!init_params.instanceRoot) return Promise.reject(dispKo('No Simplicité instanceRoot specified.'));
+        SIM_PARAMS = {
+            instanceRoot: init_params.instanceRoot,
+            endpoint: init_params.endpoint||'api',
+            params: init_params.params||null,
+            log: init_params.log||'debug'
         };
+        return loadJS(SIM_PARAMS.instanceRoot+JS_BUNDLE).then(verifySimpliciteLoaded).then(connect_params ? connect(connect_params) : Promise.resolve())
     }
 
-    function logout(){
-        return new Promise(function(resolve, reject){
-            disp("Logging out...")
-            if(APP!==null){
-                APP.logout(
-                    ()=>{
-                        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-                        APP=null;
-                        resolve();
-                    }, 
-                    reject
-                );
-            }
-            else
-                resolve();
-        });
-    }
+    var loadJS = url => new Promise(resolve => {
+        dispOk('Loading javascript : '+url);
+        var script = document.createElement('script');
+        script.onload = resolve;
+        script.src = url;
+        document.head.appendChild(script);
+    });
+    var verifySimpliciteLoaded = () => new Promise((resolve, reject)=> (typeof Simplicite=='undefined' ? reject(dispKo('Error loading library...')) : resolve()));
 
-    function getApp(){
-	return APP;
-    }
+    var connect = connect_params => () => new Promise((resolve, reject)=>{
+        if(SIM_PARAMS === null || Simplicite === undefined)
+            reject(dispKo('Helper not initialized . Exit.'));
+        else if(APP!==null)
+            reject(dispKo('Already connected. Exit.'));
+        else if(hasToken(connect_params)){
+            dispOk('Token detected. Trying connection for token.');
+            APP = new Simplicite.Ajax(SIM_PARAMS.instanceRoot,SIM_PARAMS.endpoint);
+            APP.login(connected(resolve),tokenFailed(connect_params,resolve,reject),readToken(),SIM_PARAMS.params);
+        }
+        else if(hasUserCreds(connect_params)){
+            dispOk('User credentials detected. Trying connection for user '+connect_params.login);
+            APP = new Simplicite.Ajax(SIM_PARAMS.instanceRoot,SIM_PARAMS.endpoint,connect_params.login,connect_params.password);
+            APP.login(connected(resolve),credentialsFailed(reject),false,SIM_PARAMS.params);
+        }
+        else
+            reject(dispKo('No token nor user credentials provided. Exit.'));
+    });
 
-    function loadJS(url){
-        return new Promise(function(resolve, reject){
-            var script = document.createElement('script');
-            script.onload = function(){
-                resolve();
-            };
-            script.src = url;
-            document.head.appendChild(script);
-        });
-    }
-
-    function disp(content){
-        Utils.disp('[sim] '+content, GLOBALS.log);
-    }
-
-    return {
-        init : init,
-        connect : connect,
-        logout: logout,
-        getApp: getApp
-    };
-})();
-
-var Utils = (function(){
-	function forceDownload(name, mime, b64content){
-		if (navigator.msSaveBlob) { // IE10+ : (has Blob, but not a[download] or URL)
-			var blob = b64toBlob(decodeURIComponent(b64content), mime);
-			return navigator.msSaveBlob(blob, name);
-		}
-		else {
-			var link = document.createElement("a");
-			document.body.appendChild(link);
-	        link.setAttribute("type", "hidden");
-			link.href = "data:"+mime+";base64,"+b64content;
-			link.download = name;
-			link.target = "blank";
-			link.click();
-		}
-    }
+    var hasUserCreds = connect_params => connect_params.hasOwnProperty('login') && connect_params.hasOwnProperty('password');
+    var hasToken = connect_params => connect_params.hasOwnProperty('tryToken') &&  connect_params.tryToken===true && readToken();
     
-    function disp(content, output){ //false, true, 'debug', 'container-id'
-        if(output === false){
-            return;
+    var connected = resolve => loginResponse => {
+        dispOk('Successful connection. Saving token.');
+        saveToken(loginResponse.authtoken);
+        APP.getGrant(g => {
+            dispOk('Got grant data for user '+g.login+', responsibilities: '+JSON.stringify(APP.grant.responsibilities));
+            resolve(APP);
+        });
+    };
+
+    var tokenFailed = (connect_params,resolve,reject) => () => {
+        cleanApp();
+        if(hasUserCreds(connect_params)){
+            dispKo('Token connection failed. Retrying connection with user credentials.');
+            connect(connect_params)().catch(reject).then(resolve);
         }
-        if(output === true || output === undefined){
-            console.log(content);
-            return;
-        }
-        else if(output === 'debug'){
-            console.debug(content);
-        }
-        else if(document.getElementById(output) !== null){
-            var p = document.createElement("p");
-            p.textContent = content;
-            document.getElementById(output)
-                .appendChild(p)
-                .appendChild(document.createElement("hr"));
-        }
+        else
+            reject(dispKo('Token connection failed. No user credentials. Exit.'));
     }
 
-	function base64dataFromBoDoc(boDoc){
-		return 'data:'+boDoc.mime+';base64,'+boDoc.content;
-	}
+    var credentialsFailed = reject => () => {
+        cleanApp();
+        reject(dispKo('User credentials connection failed. Exit.'));
+    };
 
-	function b64toBlob(b64Data, contentType) {
-		// Used for download data on IE10+ (need to convert base64 to blob)
-		contentType = contentType || '';
-		var sliceSize = 512;
-		//b64Data = b64Data.replace(/^[^,]+,/, '');
-		//b64Data = b64Data.replace(/\s/g, '');
-		var byteCharacters = window.atob(b64Data);
-		var byteArrays = [];
+    var logout = () => new Promise((resolve, reject) =>{
+        dispOk('Logging out.');
+        APP===null ? resolve() : APP.logout(()=>{ cleanApp(); resolve(); }, reject);
+    });
 
-		for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-		    var slice = byteCharacters.slice(offset, offset + sliceSize);
+    var cleanApp = ()=>{ APP=null; deleteToken(); };
+    var dispOk = t=>disp('[sim helper] ✅ '+t);
+    var dispKo = t =>disp('[sim helper] ❌ '+t);
+    var disp = (content, output=SIM_PARAMS&&SIM_PARAMS.log)  => {
+        if(output === 'debug')
+            console.debug(content);
+        else if(typeof(output)==='string' && document && document.getElementById(output)!==null){
+            var p = document.createElement("p"); p.textContent = content;
+            document.getElementById(output).appendChild(p).appendChild(document.createElement("hr"));
+        }
+        else if(output!==false)
+            console.log(content);
+        return content;
+    }
 
-		    var byteNumbers = new Array(slice.length);
-		    for (var i = 0; i < slice.length; i++) {
-		        byteNumbers[i] = slice.charCodeAt(i);
-		    }
-
-		    var byteArray = new Uint8Array(byteNumbers);
-
-		    byteArrays.push(byteArray);
-		}
-
-		var blob = new Blob(byteArrays, {type: contentType});
-		return blob;
-	}
-
-	return {
-		forceDownload: forceDownload,
-		base64dataFromBoDoc: base64dataFromBoDoc,
-        b64toBlob: b64toBlob,
-        disp: disp
-	};
+    return { init:init, connect:connect, logout:logout, getApp:()=>APP, disp:disp };
 })();
