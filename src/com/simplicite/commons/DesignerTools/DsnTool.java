@@ -36,7 +36,8 @@ public class DsnTool implements java.io.Serializable {
 		return null;		
 	}
 	
-	public static void forceCreateObject(ObjectDB obj, Grant g){
+	public static void createObject(ObjectDB obj){
+		Grant g = obj.getGrant();
 		boolean[] crud = g.changeAccess(obj.getName(), true, true, false, false);
 		BusinessObjectTool bot = new BusinessObjectTool(obj);
 		try{
@@ -44,6 +45,19 @@ public class DsnTool implements java.io.Serializable {
 		}
 		catch(CreateException e){
 			AppLog.error(DsnTool.class, "createObject", e.getMessage(), e, g);
+		}
+		g.changeAccess(obj.getName(), crud);
+	}
+
+	public static void updateObject(ObjectDB obj){
+		Grant g = obj.getGrant();
+		boolean[] crud = g.changeAccess(obj.getName(), false, true, true, false);
+		BusinessObjectTool bot = new BusinessObjectTool(obj);
+		try{
+			bot.update();
+		}
+		catch(UpdateException e){
+			AppLog.error(RstTool.class, "updateObject", e.getMessage(), e, g);
 		}
 		g.changeAccess(obj.getName(), crud);
 	}
