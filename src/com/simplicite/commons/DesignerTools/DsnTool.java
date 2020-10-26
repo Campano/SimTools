@@ -92,4 +92,36 @@ public class DsnTool implements java.io.Serializable {
 		String[] groups = g.queryFirstColumn("select distinct g.grp_name from m_resp r inner join m_group as g on r.rsp_group_id=g.row_id where r.rsp_login_id="+userId);
 		return groups!=null && groups.length>0 ? Arrays.asList(groups) : new ArrayList<String>();
 	}
+
+	
+	
+	public static JSONObject getObjectAsJsonTreeview(String objectName, String rowId, String treeviewName, int depth, Grant g) throws GetException{
+		ObjectDB object = g.getTmpObject(objectName);
+		TreeView tv = g.getTreeView(treeviewName);
+		Parameters.TreeviewParam p = new Parameters.TreeviewParam(tv);
+		p.setDepth(depth);
+		String json = JSONTool.get(object, rowId, ObjectDB.CONTEXT_LIST, false, null, null, true, false, null, false, false, null, p);
+		return new JSONObject(json);
+	}
+	
+	//recursive
+	public static JSONObject cleanTv(JSONObject jsonTv){
+		JSONObject rslt = jsonTv.getJSONObject("item");
+		JSONArray links = jsonTv.optJSONArray("links");
+		if(links!=null){
+			JSONObject childs = new JSONObject();
+			for(int i=0; i<links.length(); i++){
+				JSONArray list = links.getJSONObject(i).getJSONArray("list");
+				if(list.length()>0){
+					JSONArray arr = new JSONArray();
+					for(int j=0; j<list.length(); j++){
+						arr.put(cleanTv(list.getJSONObject(j)));
+					}
+					childs.put(links.getJSONObject(i).getString("object"), arr);
+				}
+			}
+			rslt.put("childs", childs);
+		}
+		return rslt;
+	}
 }
