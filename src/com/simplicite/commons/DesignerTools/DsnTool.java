@@ -4,9 +4,10 @@ import java.util.*;
 import com.simplicite.util.*;
 import com.simplicite.util.tools.*;
 import com.simplicite.util.tools.BusinessObjectTool;
-import com.simplicite.util.exceptions.CreateException;
+import com.simplicite.util.exceptions.*;
 import java.io.IOException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 /**
  * Shared code DsnTool
@@ -57,9 +58,28 @@ public class DsnTool implements java.io.Serializable {
 			bot.update();
 		}
 		catch(UpdateException e){
-			AppLog.error(RstTool.class, "updateObject", e.getMessage(), e, g);
+			AppLog.error(DsnTool.class, "updateObject", e.getMessage(), e, g);
 		}
 		g.changeAccess(obj.getName(), crud);
+	}
+	
+	public static void upsertObject(ObjectDB obj) throws SearchException, UpdateException, SaveException{
+		BusinessObjectTool bot = new BusinessObjectTool(obj);
+		
+		HashMap<String,String> filters = new HashMap<>();
+		for(ObjectField f : obj.getFields())
+			if(f.isFunctId())
+				filters.put(f.getName(), f.getValue());
+		List<String[]> rslt = bot.search(filters);
+		
+		if(rslt.size()>1)
+			throw new SearchException("Functional key not unique");
+		else if(rslt.size()==1){
+			bot.getObject().setFieldValue("row_id", rslt.get(0)[obj.getFieldIndex("row_id")]);
+			bot.update(false);
+		}
+		else
+			bot.create();
 	}
 	
 	public static byte[] html2pdf(String html) throws IOException{
@@ -92,8 +112,6 @@ public class DsnTool implements java.io.Serializable {
 		String[] groups = g.queryFirstColumn("select distinct g.grp_name from m_resp r inner join m_group as g on r.rsp_group_id=g.row_id where r.rsp_login_id="+userId);
 		return groups!=null && groups.length>0 ? Arrays.asList(groups) : new ArrayList<String>();
 	}
-
-	
 	
 	public static JSONObject getObjectAsJsonTreeview(String objectName, String rowId, String treeviewName, int depth, Grant g) throws GetException{
 		ObjectDB object = g.getTmpObject(objectName);
@@ -111,8 +129,9 @@ public class DsnTool implements java.io.Serializable {
 		if(links!=null){
 			JSONObject childs = new JSONObject();
 			for(int i=0; i<links.length(); i++){
-				JSONArray list = links.getJSONObject(i).getJSONArray("list");
-				if(list.length()>0){
+				AppLog.info(links.getJSONObject(i).toString(), Grant.getSystemAdmin());
+				JSONArray list = links.getJSONObject(i).optJSONArray("list");
+				if(list!=null && list.length()>0){
 					JSONArray arr = new JSONArray();
 					for(int j=0; j<list.length(); j++){
 						arr.put(cleanTv(list.getJSONObject(j)));
