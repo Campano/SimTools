@@ -2,7 +2,17 @@ var sim = (function() {
     'use strict';
     var SIM_PARAMS=null, APP=null, JS_BUNDLE = '/scripts/ajax/ajax-bundle.js', TOKEN_STORAGE_KEY = 'sim-token';
     var saveToken = t => window.localStorage.setItem(TOKEN_STORAGE_KEY, t);
-    var readToken = () => window.localStorage.getItem(TOKEN_STORAGE_KEY)||false;
+    var readToken = () => {
+        let localToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+        let searchParams = new URLSearchParams(window.location.search);
+
+        if(localToken)
+            return localToken;
+        else if(searchParams.has(TOKEN_STORAGE_KEY)) // usefull when token passed through GET param
+            return searchParams.get(TOKEN_STORAGE_KEY)
+        else 
+            return false;
+    };
     var deleteToken = () => window.localStorage.removeItem(TOKEN_STORAGE_KEY);
 
     var init = (init_params,connect_params=false) => {
@@ -55,7 +65,7 @@ var sim = (function() {
         APP.getGrant(g => {
             dispOk('Got grant data for user '+g.login+', responsibilities: '+JSON.stringify(APP.grant.responsibilities));
             resolve(APP);
-        });
+        }, {web: true}); //use web=true to get user scopes
     };
 
     var tokenFailed = (connect_params,resolve,reject) => () => {
@@ -85,7 +95,7 @@ var sim = (function() {
         if(output === 'debug')
             console.debug(content);
         else if(typeof(output)==='string' && document && document.getElementById(output)!==null){
-            var p = document.createElement("p"); p.textContent = content;
+            var p = document.createElement("p"); p.innerHTML = content;
             document.getElementById(output).appendChild(p).appendChild(document.createElement("hr"));
         }
         else if(output!==false)
