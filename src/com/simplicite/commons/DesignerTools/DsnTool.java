@@ -129,7 +129,6 @@ public class DsnTool implements java.io.Serializable {
 		if(links!=null){
 			JSONObject childs = new JSONObject();
 			for(int i=0; i<links.length(); i++){
-				AppLog.info(links.getJSONObject(i).toString(), Grant.getSystemAdmin());
 				JSONArray list = links.getJSONObject(i).optJSONArray("list");
 				if(list!=null && list.length()>0){
 					JSONArray arr = new JSONArray();
