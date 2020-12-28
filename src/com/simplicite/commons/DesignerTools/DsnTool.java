@@ -46,14 +46,14 @@ public class DsnTool implements java.io.Serializable {
 		try{
 			forceCreateObject(obj);
 		}
-		catch(CreateException e){
+		catch(Exception e){
 			AppLog.error(DsnTool.class, "createObject", e.getMessage(), e, obj.getGrant());
 		}
 	}
 	
-	public static void forceCreateObject(ObjectDB obj) throws CreateException{
+	public static void forceCreateObject(ObjectDB obj) throws CreateException, ValidateException{
 		boolean[] crud = obj.getGrant().changeAccess(obj.getName(), true, true, false, false);
-		(new BusinessObjectTool(obj)).create();
+		(new BusinessObjectTool(obj)).validateAndCreate();
 		obj.getGrant().changeAccess(obj.getName(), crud);
 	}
 
@@ -66,18 +66,18 @@ public class DsnTool implements java.io.Serializable {
 		try{
 			forceUpdateObject(obj);
 		}
-		catch(UpdateException e){
+		catch(Exception e){
 			AppLog.error(RstTool.class, "updateObject", e.getMessage(), e, obj.getGrant());
 		}
 	}
 
-	public static void forceUpdateObject(ObjectDB obj) throws UpdateException{
+	public static void forceUpdateObject(ObjectDB obj) throws UpdateException, ValidateException{
 		boolean[] crud = obj.getGrant().changeAccess(obj.getName(), false, true, true, false);
-		(new BusinessObjectTool(obj)).update();
+		(new BusinessObjectTool(obj)).validateAndUpdate();
 		obj.getGrant().changeAccess(obj.getName(), crud);
 	}
 	
-	public static void upsertObject(ObjectDB obj) throws SearchException, UpdateException, SaveException{
+	public static void upsertObject(ObjectDB obj) throws SearchException, UpdateException, SaveException, ValidateException{
 		BusinessObjectTool bot = new BusinessObjectTool(obj);
 		
 		HashMap<String,String> filters = new HashMap<>();
@@ -90,10 +90,10 @@ public class DsnTool implements java.io.Serializable {
 			throw new SearchException("Functional key not unique");
 		else if(rslt.size()==1){
 			bot.getObject().setFieldValue("row_id", rslt.get(0)[obj.getFieldIndex("row_id")]);
-			bot.update(false);
+			bot.validateAndUpdate(false);
 		}
 		else
-			bot.create();
+			bot.validateAndCreate();
 	}
 	
 	public static byte[] html2pdf(String html) throws IOException{
