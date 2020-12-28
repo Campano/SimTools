@@ -37,30 +37,44 @@ public class DsnTool implements java.io.Serializable {
 		return null;		
 	}
 	
+	@Deprecated
 	public static void createObject(ObjectDB obj){
-		Grant g = obj.getGrant();
-		boolean[] crud = g.changeAccess(obj.getName(), true, true, false, false);
-		BusinessObjectTool bot = new BusinessObjectTool(obj);
-		try{
-			bot.create();
-		}
-		catch(CreateException e){
-			AppLog.error(DsnTool.class, "createObject", e.getMessage(), e, g);
-		}
-		g.changeAccess(obj.getName(), crud);
+		silentForceCreateObject(obj);
 	}
 
-	public static void updateObject(ObjectDB obj){
-		Grant g = obj.getGrant();
-		boolean[] crud = g.changeAccess(obj.getName(), false, true, true, false);
-		BusinessObjectTool bot = new BusinessObjectTool(obj);
+	public static void silentForceCreateObject(ObjectDB obj){
 		try{
-			bot.update();
+			forceCreateObject(obj);
+		}
+		catch(CreateException e){
+			AppLog.error(DsnTool.class, "createObject", e.getMessage(), e, obj.getGrant());
+		}
+	}
+	
+	public static void forceCreateObject(ObjectDB obj) throws CreateException{
+		boolean[] crud = obj.getGrant().changeAccess(obj.getName(), true, true, false, false);
+		(new BusinessObjectTool(obj)).create();
+		obj.getGrant().changeAccess(obj.getName(), crud);
+	}
+
+	@Deprecated
+	public static void updateObject(ObjectDB obj){
+		forceUpdateObject(obj);
+	}
+
+	public static void silentForceUpdateObject(ObjectDB obj){
+		try{
+			forceUpdateObject(obj);
 		}
 		catch(UpdateException e){
-			AppLog.error(DsnTool.class, "updateObject", e.getMessage(), e, g);
+			AppLog.error(RstTool.class, "updateObject", e.getMessage(), e, obj.getGrant());
 		}
-		g.changeAccess(obj.getName(), crud);
+	}
+
+	public static void forceUpdateObject(ObjectDB obj) throws UpdateException{
+		boolean[] crud = obj.getGrant().changeAccess(obj.getName(), false, true, true, false);
+		(new BusinessObjectTool(obj)).update();
+		obj.getGrant().changeAccess(obj.getName(), crud);
 	}
 	
 	public static void upsertObject(ObjectDB obj) throws SearchException, UpdateException, SaveException{
