@@ -59,7 +59,7 @@ public class DsnTool implements java.io.Serializable {
 
 	@Deprecated
 	public static void updateObject(ObjectDB obj){
-		forceUpdateObject(obj);
+		silentForceUpdateObject(obj);
 	}
 
 	public static void silentForceUpdateObject(ObjectDB obj){
@@ -67,7 +67,7 @@ public class DsnTool implements java.io.Serializable {
 			forceUpdateObject(obj);
 		}
 		catch(Exception e){
-			AppLog.error(RstTool.class, "updateObject", e.getMessage(), e, obj.getGrant());
+			AppLog.error(DsnTool.class, "updateObject", e.getMessage(), e, obj.getGrant());
 		}
 	}
 
