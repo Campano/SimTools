@@ -11,5 +11,6 @@
 /.gradle
 /.vscode
 /.theia
+/.factorypath
 /**/Thumbs.db
 /**/.DS_Store
