@@ -13,5 +13,4 @@
 `DesignerTools` module definition
 =================================
 
-
-
+Personal tooling that might be merged in Simplicité-core in the future
