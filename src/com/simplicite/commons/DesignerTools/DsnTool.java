@@ -124,7 +124,7 @@ public class DsnTool implements java.io.Serializable {
 			return null;
 		Grant g = Grant.getSystemAdmin();
 		String[] groups = g.queryFirstColumn("select distinct g.grp_name from m_resp r inner join m_group as g on r.rsp_group_id=g.row_id where r.rsp_login_id="+userId);
-		return groups!=null && groups.length>0 ? Arrays.asList(groups) : new ArrayList<String>();
+		return groups!=null && groups.length>0 ? new ArrayList<String>(Arrays.asList(groups)) : new ArrayList<String>();
 	}
 	
 	public static JSONObject getObjectAsJsonTreeview(String objectName, String rowId, String treeviewName, int depth, Grant g) throws GetException{
