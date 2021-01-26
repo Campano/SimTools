@@ -5,7 +5,7 @@
 	<action>upsert</action>
 	<data>
 		<mdl_name>DesignerTools</mdl_name>
-		<mdl_version>1.2</mdl_version>
+		<mdl_version>1.1</mdl_version>
 		<mdl_prefix>dsn</mdl_prefix>
 		<mdl_url><![CDATA[{
 	"type": "git",
@@ -40,6 +40,15 @@
 <object>
 	<name>Adapter</name>
 	<action>upsert</action>
+	<data>
+		<adp_name>QuickListAdapter</adp_name>
+		<adp_atomic>1</adp_atomic>
+		<adp_type>JAVA</adp_type>
+		<adp_script/>
+		<adp_class/>
+		<adp_script_id>src/com/simplicite/adapters/DesignerTools/QuickListAdapter.java</adp_script_id>
+		<row_module_id.mdl_name>DesignerTools</row_module_id.mdl_name>
+	</data>
 	<data>
 		<adp_name>QuickParamAdapter</adp_name>
 		<adp_atomic>1</adp_atomic>
